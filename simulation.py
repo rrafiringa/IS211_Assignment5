@@ -62,6 +62,7 @@ class Request(object):
     """
     Request object
     """
+
     def __init__(self, req_item):
         """
         Request object constructor
@@ -69,8 +70,6 @@ class Request(object):
         :return: None
         """
         try:
-            if req_item[0] == '9949':
-                print req_item
             self.timestamp = int(req_item[0])
             self.req_uri = req_item[1]
             self.exec_time = int(req_item[2])
@@ -128,8 +127,8 @@ def simulate_one_server(input_file):
                     w_times.append(curr.wait_time(curr_time))
                     www.tick()
             avg_wait = float(sum(w_times)) / len(w_times)
-            return 'Average wait: ' \
-                   '{.2f} seconds task remaining {}' \
+            return 'Average wait: {:.2f} seconds\n' \
+                   '\t Tasks remaining {}' \
                 .format(avg_wait, req_queue.size())
     except IOError:
         print 'Could not open {}'.format(input_file)
@@ -137,28 +136,51 @@ def simulate_one_server(input_file):
 
 def simulate_many_servers(input_file, num_servers):
     rr_items = {}
+    averages = []
+    out = ''
     try:
+        for count in range(num_servers):
+            rr_items[count] = {}
+            rr_items[count]['server'] = Server()
+            rr_items[count]['queue'] = Queue()
+            rr_items[count]['times'] = [0.0]
+
         with open(input_file, 'rb') as infile:
-            for count in range(num_servers):
-                idx = 'server' + str(count)
-                rr_items[idx] = Server()
-                rr_items[idx]['queue'] = Queue()
-                rr_items[idx]['times'] = [0.0]
-
             req_data = csv.reader(infile)
-            print req_data
+            eof = False
+            try:
+                while not eof:
+                    for key, item in rr_items.iteritems():
+                        row = req_data.next()
+                        item['queue'].enqueue(Request(row))
+                        if not item['server'].busy() and not item['queue'].is_empty():
+                            curr = item['queue'].dequeue()
+                            item['server'].start_next(curr)
+                            curr_time = curr.get_stamp()
+                            item['times'].append(curr.wait_time(curr_time))
+                            item['server'].tick()
+            except StopIteration:
+                eof = True
 
+        for key, item in rr_items.iteritems():
+            avg_wait = float(sum(item['times'])) / len(item['times'])
 
+            out += 'Server {}:\n' \
+                   '\tAverage wait: {:.2f} seconds.\n' \
+                   '\tTasks remaining: {}.\n' \
+                .format(key, avg_wait, item['queue'].size())
 
     except IOError:
         print 'Could not open file ', input_file
+
+    return out
 
 
 if __name__ == '__main__':
     URL = 'http://s3.amazonaws.com/cuny-is211-spring2015/requests.csv'
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('--file', required=False, type=str, default=URL)
-    PARSER.add_argument('--server', required=False, type=int, default=3)
+    PARSER.add_argument('--servers', required=False, type=int, default=20)
     ARGS = PARSER.parse_args()
     FILE = ''
     if ARGS.file:
