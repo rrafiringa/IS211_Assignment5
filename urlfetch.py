@@ -15,7 +15,7 @@ def fetch_url(url):
     :return: (string) URL data
     """
     try:
-        return urllib2.urlopen(urllib2.Request(url)).read()
+        return urllib2.urlopen(urllib2.Request(url))
     except urllib2.URLError as e:
         if hasattr(e, 'reason'):
             print r"Could not connect to server."
