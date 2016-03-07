@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- Coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 Week 5 - Assignment 5 - Data Structures 2
@@ -15,7 +15,7 @@ from urlfetch import fetch_url
 
 class Server(object):
     """
-    Generic request processing.
+    Generic request processor.
     """
 
     def __init__(self, rps=1):
@@ -59,6 +59,9 @@ class Server(object):
 
 
 class Request(object):
+    """
+    Request object
+    """
     def __init__(self, req_item):
         """
         Request object constructor
@@ -71,7 +74,7 @@ class Request(object):
             self.timestamp = int(req_item[0])
             self.req_uri = req_item[1]
             self.exec_time = int(req_item[2])
-        except IndexError as e:
+        except IndexError:
             print 'Malformed request record: ', req_item
 
     def get_stamp(self):
@@ -104,17 +107,17 @@ class Request(object):
         return current_time - self.exec_time
 
 
-def simulate_one_server(infile):
+def simulate_one_server(input_file):
     """
     Server simulator
-    :param infile: (File) - Request inputs file.
+    :param input_file: (File) - Request inputs file.
     :return: (Float) - Average wait time for a request
     """
     www = Server()
     req_queue = Queue()
     try:
-        with open(FILE, 'rb') as INFILE:
-            req_data = csv.reader(INFILE)
+        with open(input_file, 'rb') as infile:
+            req_data = csv.reader(infile)
             w_times = []
             for row in req_data:
                 req_queue.enqueue(Request(row))
@@ -126,7 +129,8 @@ def simulate_one_server(infile):
                     www.tick()
             avg_wait = float(sum(w_times)) / len(w_times)
             return 'Average wait: ' \
-                   '%.2f seconds task remaining %3d' % (avg_wait, req_queue.size()),
+                   '{.2f} seconds task remaining {}' \
+                .format(avg_wait, req_queue.size())
     except IOError:
         print 'Could not open {}'.format(FILE)
 
@@ -142,7 +146,7 @@ if __name__ == '__main__':
         with open(FILE, 'wb') as OUTFILE:
             READER = csv.reader(fetch_url(URL), dialect='excel')
             WRITER = csv.writer(OUTFILE)
-            for row in READER:
-                WRITER.writerow(row)
+            for line in READER:
+                WRITER.writerow(line)
 
         print simulate_one_server(FILE)
