@@ -132,14 +132,35 @@ def simulate_one_server(input_file):
                    '{.2f} seconds task remaining {}' \
                 .format(avg_wait, req_queue.size())
     except IOError:
-        print 'Could not open {}'.format(FILE)
+        print 'Could not open {}'.format(input_file)
+
+
+def simulate_many_servers(input_file, num_servers):
+    rr_items = {}
+    try:
+        with open(input_file, 'rb') as infile:
+            for count in range(num_servers):
+                idx = 'server' + str(count)
+                rr_items[idx] = Server()
+                rr_items[idx]['queue'] = Queue()
+                rr_items[idx]['times'] = [0.0]
+
+            req_data = csv.reader(infile)
+            print req_data
+
+
+
+    except IOError:
+        print 'Could not open file ', input_file
 
 
 if __name__ == '__main__':
     URL = 'http://s3.amazonaws.com/cuny-is211-spring2015/requests.csv'
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('--file', required=False, type=str, default=URL)
+    PARSER.add_argument('--server', required=False, type=int, default=3)
     ARGS = PARSER.parse_args()
+    FILE = ''
     if ARGS.file:
         URL = ARGS.file
         FILE = os.path.basename(URL)
@@ -148,5 +169,7 @@ if __name__ == '__main__':
             WRITER = csv.writer(OUTFILE)
             for line in READER:
                 WRITER.writerow(line)
-
+    if ARGS.servers:
+        print simulate_many_servers(FILE, ARGS.servers)
+    else:
         print simulate_one_server(FILE)
